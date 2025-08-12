@@ -20,7 +20,7 @@ __global__ void matAdd(float* mat_a, float* mat_b, float* mat_c, int row_num, in
 void matAddCpu(float* mat_a, float* mat_b, float* mat_c, int row_num, int col_num) {
     for (int row = 0; row < row_num; row++) {
         for (int col = 0; col < col_num; col++) {
-            *(mat_c + row*col_num + col) = *(mat_a + row*col_num + col) + *(mat_c + row*col_num + col);
+            *(mat_c + row*col_num + col) = *(mat_a + row*col_num + col) + *(mat_b + row*col_num + col);
         }
     }
 }

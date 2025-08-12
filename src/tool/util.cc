@@ -13,7 +13,7 @@ bool compare_mat_diff(float* mat_a, float* mat_b, int row_num, int col_num) {
             float a = *(mat_a + i * col_num + j);
             float b = *(mat_b + i * col_num + j);
             if (std::abs(a - b) > delta) {
-                delta += 1;
+                diff_num += 1;
             }
         }
     }
