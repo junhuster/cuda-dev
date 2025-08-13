@@ -2,6 +2,7 @@
 #include <chrono>
 
 bool compare_mat_diff(float* mat_a, float* mat_b, int row_num, int col_num);
+bool compare_float_diff(float* left, float* right, int val_num);
 float getRandomFloat();
 class MyTime {
 public:
