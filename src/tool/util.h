@@ -1,9 +1,12 @@
 #pragma once
 #include <chrono>
+#include <cuda_runtime.h>
 
 bool compare_mat_diff(float* mat_a, float* mat_b, int row_num, int col_num);
 bool compare_float_diff(float* left, float* right, int val_num);
 float getRandomFloat();
+uint64_t getRandomInt();
+void constructInts(uint64_t* output_buffer, int val_num);
 class MyTime {
 public:
     MyTime() {}
@@ -30,3 +33,5 @@ private:
     int64_t start_us_ = 0;
     int64_t end_us_ = 0;
 };
+
+void getDeviceProp();

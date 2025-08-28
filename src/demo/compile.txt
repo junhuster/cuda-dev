@@ -1,0 +1,4 @@
+g++ --std=c++17 m_mat_add.cc  ../tool/util.cc ../gpu-kernal/mat_add.o -lcudart
+g++ --std=c++17 m_fp16_convert.cc  ../tool/util.cc ../tool/fp16_cpu.cc  ../gpu-kernal/fp16.o -lcudart
+sudo nvprof -m gld_throughput,gst_throughput,warp_execution_efficiency ./a.out 0
+sudo nvprof -m gld_throughput,dram_read_throughput,branch_efficiency,inst_per_warp ./a.out 0

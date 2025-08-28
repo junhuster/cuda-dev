@@ -46,3 +46,50 @@ float getRandomFloat() {
     float random_float = dis(gen);
     return random_float;
 }
+
+uint64_t getRandomInt() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<uint64_t> dis(0, 255);
+    return dis(gen);
+}
+
+void constructInts(uint64_t* output_buffer, int val_num) {
+    uint64_t last_num = 0;
+    for (int i = 0; i < val_num; i++) {
+        if (i % 500 == 0) {
+            last_num = getRandomInt();
+        } else {
+            last_num = last_num + i;
+        }
+        if (last_num > 255) last_num = last_num % 255;
+        *(output_buffer + i) = last_num;
+    }
+}
+
+void getDeviceProp() {
+    int device_cnt = -1;
+    cudaGetDeviceCount(&device_cnt);
+    if (device_cnt == 0) {
+        std::cout << "cuda device cnt: " << device_cnt << std::endl;
+    }
+    for (int device_id = 0; device_id < device_cnt; device_id++) {
+        cudaDeviceProp prop;
+        cudaGetDeviceProperties(&prop, device_id);
+        std::cout << " device idx: " << device_id << "\n"
+                    << " device name: " << prop.name << "\n"
+                    << " compute capability: " << prop.major << "." << prop.minor << "\n"
+                    << " Total Global Memeory: " << prop.totalGlobalMem / (1024 * 1024) << " MB\n"
+                    << " Shared Memory Per Block: " << prop.sharedMemPerBlock << " Bytes\n"
+                    << " regs per block: " << prop.regsPerBlock << "\n"
+                    << " warp size: " << prop.warpSize << "\n"
+                    << " totalConstMem: " << prop.totalConstMem << "\n"
+                    << " Max Threads per block: " << prop.maxThreadsPerBlock << "\n"
+                    << " Max Block Dimensions: (" << prop.maxThreadsDim[0] << ", " << prop.maxThreadsDim[1] << ", " << prop.maxThreadsDim[2] << ")\n"
+                    << " Max Grid Dimensions: (" << prop.maxGridSize[0] << ", " <<  prop.maxGridSize[1] << ", " <<  prop.maxGridSize[2] << ")\n"
+                    << " Multiprocessor Count: " << prop.multiProcessorCount << "\n" 
+                    << " concurrentKernels: " << prop.concurrentKernels << "\n"
+                    << " maxThreadsPerMultiProcessor: " << prop.maxThreadsPerMultiProcessor << "\n"
+                    << " maxBlocksPerMultiProcessor: " << prop.maxBlocksPerMultiProcessor << std::endl << "\n";
+    }
+}
