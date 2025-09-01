@@ -150,3 +150,21 @@ void lanuchReduceSumBankOpt(uint64_t* input_buffer, int val_num, int block_size,
     reduceSumBankOpt<<<grid_size, block_size, shamem_size, stream>>>(block_output, old_grid_dim, input_buffer);
     reduceSumSmallDataSet<<<1, 32, 0, stream>>>(input_buffer, grid_size, block_output);
 }
+
+void lanuchReduceSumBankOpt8byte(uint64_t* input_buffer, int val_num, int block_size, uint64_t* block_output, const ::cudaStream_t stream = 0) {
+    cudaSharedMemConfig shmm_cfg = cudaSharedMemBankSizeEightByte;
+    cudaDeviceSetSharedMemConfig(shmm_cfg);
+    /*{
+        cudaSharedMemConfig shmm_cfg0;
+        cudaDeviceGetSharedMemConfig(&shmm_cfg0);
+        std::cout << "now shmm config: " << (int)shmm_cfg << std::endl;
+    }*/
+    
+    uint64_t shamem_size = BLOCK_SIZE * sizeof(uint64_t);
+    int grid_size = (val_num + block_size - 1) / block_size;
+    reduceSumBankOpt<<<grid_size, block_size, shamem_size, stream>>>(input_buffer, val_num, block_output);
+    int old_grid_dim = grid_size;
+    grid_size = (old_grid_dim + block_size - 1) / block_size;
+    reduceSumBankOpt<<<grid_size, block_size, shamem_size, stream>>>(block_output, old_grid_dim, input_buffer);
+    reduceSumSmallDataSet<<<1, 32, 0, stream>>>(input_buffer, grid_size, block_output);
+}
