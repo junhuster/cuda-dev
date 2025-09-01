@@ -6,5 +6,7 @@ void lanuchReduceSumBase(uint64_t* input_buffer, int val_num, int block_size, ui
 void lanuchReduceSumBase2(uint64_t* input_buffer, int val_num, int block_size, uint64_t* block_output, const ::cudaStream_t stream = 0);
 void lanuchReduceSumShamem(uint64_t* input_buffer, int val_num, int block_size, uint64_t* block_output, const ::cudaStream_t stream = 0);
 void lanuchReduceSumWarpOpt(uint64_t* input_buffer, int val_num, int block_size, uint64_t* block_output, const ::cudaStream_t stream = 0);
+void lanuchReduceSumBankOpt(uint64_t* input_buffer, int val_num, int block_size, uint64_t* block_output, const ::cudaStream_t stream = 0);
+
 
 
