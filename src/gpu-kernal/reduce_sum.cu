@@ -100,6 +100,54 @@ __global__ void reduceSumBankOpt(uint64_t* input_buffer, int val_num, uint64_t* 
     }
 }
 
+__global__ void reduceSumIdleOpt(uint64_t* input_buffer, int val_num, uint64_t* block_output) {  
+    __shared__ uint64_t my_data[BLOCK_SIZE];
+    int tid = threadIdx.x;
+    int idx = blockDim.x * 2 * blockIdx.x + threadIdx.x;
+    if (idx + blockDim.x >= val_num) return;
+    my_data[tid] = *(input_buffer + idx) + *(input_buffer + idx + blockDim.x);
+    __syncthreads();
+    for (int s = blockDim.x / 2; s > 0; s = s / 2) {
+        if (tid < s) {
+            my_data[tid] = my_data[tid] + my_data[tid + s];
+        }
+        __syncthreads();
+    }
+    if (tid == 0) {
+        block_output[blockIdx.x] = my_data[0];
+    }
+}
+
+__device__ void warpRollup(uint64_t* input_buffer, int tid) {  
+    *(input_buffer + tid) += *(input_buffer + tid + 32);
+    *(input_buffer + tid) += *(input_buffer + tid + 16);
+    *(input_buffer + tid) += *(input_buffer + tid + 8);
+    *(input_buffer + tid) += *(input_buffer + tid + 4);
+    *(input_buffer + tid) += *(input_buffer + tid + 2);
+    *(input_buffer + tid) += *(input_buffer + tid + 1);
+}
+
+__global__ void reduceSumRollup(uint64_t* input_buffer, int val_num, uint64_t* block_output) {  
+    __shared__ uint64_t my_data[BLOCK_SIZE];
+    int tid = threadIdx.x;
+    int idx = blockDim.x * 2 * blockIdx.x + threadIdx.x;
+    if (idx + blockDim.x >= val_num) return;
+    my_data[tid] = *(input_buffer + idx) + *(input_buffer + idx + blockDim.x);
+    __syncthreads();
+    for (int s = blockDim.x / 2; s > 32; s = s / 2) {
+        if (tid < s) {
+            my_data[tid] = my_data[tid] + my_data[tid + s];
+        }
+        __syncthreads();
+    }
+    if (tid < 32) {
+        warpRollup(my_data, tid);
+    }
+    if (tid == 0) {
+        block_output[blockIdx.x] = my_data[0];
+    }
+}
+
 void lanuchWarmup(uint64_t* input_buffer, int val_num, int block_size, uint64_t* block_output) {
     int grid_size = (val_num + block_size - 1) / block_size;
     warmup<<<grid_size, block_size>>>(input_buffer, val_num, block_output);
@@ -166,5 +214,29 @@ void lanuchReduceSumBankOpt8byte(uint64_t* input_buffer, int val_num, int block_
     int old_grid_dim = grid_size;
     grid_size = (old_grid_dim + block_size - 1) / block_size;
     reduceSumBankOpt<<<grid_size, block_size, shamem_size, stream>>>(block_output, old_grid_dim, input_buffer);
+    reduceSumSmallDataSet<<<1, 32, 0, stream>>>(input_buffer, grid_size, block_output);
+}
+
+void lanuchReduceSumIdleOpt(uint64_t* input_buffer, int val_num, int block_size, uint64_t* block_output, const ::cudaStream_t stream = 0) {
+    cudaSharedMemConfig shmm_cfg = cudaSharedMemBankSizeEightByte;
+    cudaDeviceSetSharedMemConfig(shmm_cfg);    
+    uint64_t shamem_size = BLOCK_SIZE * sizeof(uint64_t);
+    int grid_size = (val_num + 2 * block_size - 1) / (2 * block_size);
+    reduceSumIdleOpt<<<grid_size, block_size, shamem_size, stream>>>(input_buffer, val_num, block_output);
+    int old_grid_dim = grid_size;
+    grid_size = (old_grid_dim + 2 * block_size - 1) / (2 * block_size);
+    reduceSumIdleOpt<<<grid_size, block_size, shamem_size, stream>>>(block_output, old_grid_dim, input_buffer);
+    reduceSumSmallDataSet<<<1, 32, 0, stream>>>(input_buffer, grid_size, block_output);
+}
+
+void lanuchReduceSumRollup(uint64_t* input_buffer, int val_num, int block_size, uint64_t* block_output, const ::cudaStream_t stream = 0) {
+    cudaSharedMemConfig shmm_cfg = cudaSharedMemBankSizeEightByte;
+    cudaDeviceSetSharedMemConfig(shmm_cfg);    
+    uint64_t shamem_size = BLOCK_SIZE * sizeof(uint64_t);
+    int grid_size = (val_num + 2 * block_size - 1) / (2 * block_size);
+    reduceSumRollup<<<grid_size, block_size, shamem_size, stream>>>(input_buffer, val_num, block_output);
+    int old_grid_dim = grid_size;
+    grid_size = (old_grid_dim + 2 * block_size - 1) / (2 * block_size);
+    reduceSumRollup<<<grid_size, block_size, shamem_size, stream>>>(block_output, old_grid_dim, input_buffer);
     reduceSumSmallDataSet<<<1, 32, 0, stream>>>(input_buffer, grid_size, block_output);
 }

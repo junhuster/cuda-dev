@@ -157,6 +157,36 @@ int main(int argc, char** argv) {
         uint64_t tm2 = timer.interval();
         std::cout << "lanuchReduceSumBankOpt8byte, gpu cost:(" << tm1 + tm2 << "," << tm1 << "," << tm2 << "), cpu_cost:" << cpu_cost << std::endl;
 
+    } else if (kind == 6) {
+        lanuchReduceSumIdleOpt(d_input, VAL_NUM, BLOCK_SIZE, block_output, stream);
+        cudaStreamSynchronize(stream);
+        uint64_t tm1 = timer.interval();
+        uint64_t gpu_res;
+        cudaMemcpy(&gpu_res, block_output, sizeof(uint64_t), cudaMemcpyDeviceToHost);
+        std::cout << "lanuchReduceSumIdleOpt, cuda kernal res:" << gpu_res << ", cpu res:" << output_cpu;
+        if (output_cpu == gpu_res) {
+            std::cout << ", gpu res eq cpu" << std::endl;
+        } else {
+            std::cout << ", gpu res not eq cpu" << std::endl;
+        }
+        uint64_t tm2 = timer.interval();
+        std::cout << "lanuchReduceSumIdleOpt, gpu cost:(" << tm1 + tm2 << "," << tm1 << "," << tm2 << "), cpu_cost:" << cpu_cost << std::endl;
+
+    } else if (kind == 7) {
+        lanuchReduceSumRollup(d_input, VAL_NUM, BLOCK_SIZE, block_output, stream);
+        cudaStreamSynchronize(stream);
+        uint64_t tm1 = timer.interval();
+        uint64_t gpu_res;
+        cudaMemcpy(&gpu_res, block_output, sizeof(uint64_t), cudaMemcpyDeviceToHost);
+        std::cout << "lanuchReduceSumRollup, cuda kernal res:" << gpu_res << ", cpu res:" << output_cpu;
+        if (output_cpu == gpu_res) {
+            std::cout << ", gpu res eq cpu" << std::endl;
+        } else {
+            std::cout << ", gpu res not eq cpu" << std::endl;
+        }
+        uint64_t tm2 = timer.interval();
+        std::cout << "lanuchReduceSumRollup, gpu cost:(" << tm1 + tm2 << "," << tm1 << "," << tm2 << "), cpu_cost:" << cpu_cost << std::endl;
+
     }
     std::cout << "\n*****************after compute***********\n" << std::endl;
     return 0;
